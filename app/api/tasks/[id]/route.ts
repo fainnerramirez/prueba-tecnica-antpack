@@ -7,8 +7,11 @@ const VALID_PRIORITIES: TaskPriority[] = ['low', 'medium', 'high'];
 
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
+
+  const { id } = await context.params;
+
   let body;
   try {
     body = await req.json();
@@ -37,7 +40,7 @@ export async function PATCH(
     );
   }
 
-  const updated = updateTask(params.id, { status, priority });
+  const updated = updateTask(id, { status, priority });
 
   if (!updated) {
     return NextResponse.json({ error: 'Tarea no encontrada' }, { status: 404 });
