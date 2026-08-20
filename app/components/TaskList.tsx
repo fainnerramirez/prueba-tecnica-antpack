@@ -1,6 +1,9 @@
 'use client';
 
 import type { Task, TaskStatus } from '@/lib/types';
+import { Pencil } from 'lucide-react';
+import { Button } from './ui/button';
+import { Skeleton } from './ui/skeleton';
 import {
   Select,
   SelectContent,
@@ -28,9 +31,10 @@ interface TaskListProps {
   loading: boolean;
   updatingId: string | null;
   onStatusChange: (id: string, status: TaskStatus) => void;
+  onEdit: (task: Task) => void;
 }
 
-export default function TaskList({ tasks, loading, updatingId, onStatusChange }: TaskListProps) {
+export default function TaskList({ tasks, loading, updatingId, onStatusChange, onEdit }: TaskListProps) {
   return (
     <div className="overflow-hidden rounded-xl border bg-card shadow-sm">
       <div className="overflow-x-auto">
@@ -40,7 +44,7 @@ export default function TaskList({ tasks, loading, updatingId, onStatusChange }:
               <th className="px-5 py-4 font-medium">Tarea</th>
               <th className="px-5 py-4 font-medium">Prioridad</th>
               <th className="px-5 py-4 font-medium">Estado</th>
-              <th className="px-5 py-4 text-right font-medium">Cambiar estado</th>
+              <th className="px-5 py-4 text-right font-medium">Acciones</th>
             </tr>
           </thead>
           <tbody className="divide-y">
@@ -48,7 +52,7 @@ export default function TaskList({ tasks, loading, updatingId, onStatusChange }:
               Array.from({ length: 4 }).map((_, index) => (
                 <tr key={`skeleton-${index}`}>
                   <td className="px-5 py-5" colSpan={4}>
-                    <div className="h-5 animate-pulse rounded bg-muted" />
+                    <Skeleton className="h-5 w-full" />
                   </td>
                 </tr>
               ))}
@@ -80,22 +84,37 @@ export default function TaskList({ tasks, loading, updatingId, onStatusChange }:
                     </span>
                   </td>
                   <td className="px-5 py-4 text-right">
-                    <Select
-                      value={task.status}
-                      onValueChange={(value) => value && onStatusChange(task.id, value as TaskStatus)}
-                      disabled={updatingId === task.id}
-                    >
-                      <SelectTrigger className="ml-auto" size="sm" aria-label={`Cambiar estado de ${task.title}`}>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {STATUS_OPTIONS.map((option) => (
-                          <SelectItem key={option.value} value={option.value}>
-                            {option.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <div className="flex items-center justify-end gap-2">
+                      {updatingId === task.id ? (
+                        <Skeleton className="h-7 w-28" />
+                      ) : (
+                        <Select
+                          value={task.status}
+                          onValueChange={(value) => value && onStatusChange(task.id, value as TaskStatus)}
+                          disabled={updatingId === task.id}
+                        >
+                          <SelectTrigger size="sm" aria-label={`Cambiar estado de ${task.title}`}>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {STATUS_OPTIONS.map((option) => (
+                              <SelectItem key={option.value} value={option.value}>
+                                {option.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      )}
+                      <Button
+                        aria-label={`Editar ${task.title}`}
+                        size="icon-sm"
+                        variant="ghost"
+                        onClick={() => onEdit(task)}
+                        disabled={updatingId === task.id}
+                      >
+                        <Pencil />
+                      </Button>
+                    </div>
                   </td>
                 </tr>
               ))}

@@ -57,18 +57,22 @@ export function createTask(data: {
 
 export function updateTask(
   id: string,
-  data: Partial<Pick<Task, 'status' | 'priority'>>
+  data: Partial<Pick<Task, 'title' | 'description' | 'status' | 'priority'>>
 ): Task | null {
   const existing = db.prepare('SELECT * FROM tasks WHERE id = ?').get(id) as Task | undefined;
   if (!existing) return null;
 
   const updated: Task = {
     ...existing,
+    title: data.title ?? existing.title,
+    description: data.description ?? existing.description,
     status: data.status ?? existing.status,
     priority: data.priority ?? existing.priority,
   };
 
-  db.prepare('UPDATE tasks SET status = ?, priority = ? WHERE id = ?').run(
+  db.prepare('UPDATE tasks SET title = ?, description = ?, status = ?, priority = ? WHERE id = ?').run(
+    updated.title,
+    updated.description,
     updated.status,
     updated.priority,
     id

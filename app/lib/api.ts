@@ -28,7 +28,7 @@ export async function createTask(data: {
 
 export async function updateTask(
   id: string,
-  data: Partial<Pick<Task, 'status' | 'priority'>>
+  data: Partial<Pick<Task, 'title' | 'description' | 'status' | 'priority'>>
 ) {
   const response = await api.patch<{ data: Task }>(`/tasks/${id}`, data);
   return response.data.data;

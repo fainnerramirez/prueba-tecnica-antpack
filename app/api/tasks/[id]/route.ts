@@ -19,11 +19,23 @@ export async function PATCH(
     return NextResponse.json({ error: 'JSON inválido' }, { status: 400 });
   }
 
-  const { status, priority } = body ?? {};
+  const { title, description, status, priority } = body ?? {};
 
-  if (status === undefined && priority === undefined) {
+  if (title === undefined && description === undefined && status === undefined && priority === undefined) {
     return NextResponse.json(
-      { error: 'Debes enviar al menos status o priority' },
+      { error: 'Debes enviar al menos un campo para actualizar' },
+      { status: 400 }
+    );
+  }
+  if (title !== undefined && (typeof title !== 'string' || title.trim().length < 3)) {
+    return NextResponse.json(
+      { error: 'El título debe tener al menos 3 caracteres' },
+      { status: 400 }
+    );
+  }
+  if (description !== undefined && (typeof description !== 'string' || !description.trim())) {
+    return NextResponse.json(
+      { error: 'La descripción no puede estar vacía' },
       { status: 400 }
     );
   }
@@ -40,7 +52,12 @@ export async function PATCH(
     );
   }
 
-  const updated = updateTask(id, { status, priority });
+  const updated = updateTask(id, {
+    title: typeof title === 'string' ? title.trim() : undefined,
+    description: typeof description === 'string' ? description.trim() : undefined,
+    status,
+    priority,
+  });
 
   if (!updated) {
     return NextResponse.json({ error: 'Tarea no encontrada' }, { status: 404 });

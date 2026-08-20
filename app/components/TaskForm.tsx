@@ -1,24 +1,56 @@
 'use client';
 
-import { FormEvent, useState } from 'react';
+import { FormEvent, useEffect, useState } from 'react';
 import type { Task, TaskPriority, TaskStatus } from '@/lib/types';
-import { createTask } from '@/lib/api';
-import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
+import { createTask, updateTask } from '@/lib/api';
+import { Loader2, Pencil, Plus } from 'lucide-react';
+import { toast } from 'sonner';
+import { Button } from './ui/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from './ui/dialog';
 
 interface TaskFormProps {
-  onCreated: (task: Task) => void;
+  onSaved: (task: Task) => void;
+  task?: Task;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  showTrigger?: boolean;
 }
 
 const fieldClassName =
   'w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none transition focus-visible:ring-2 focus-visible:ring-ring';
 
-export default function TaskForm({ onCreated }: TaskFormProps) {
-  const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
-  const [priority, setPriority] = useState<TaskPriority>('medium');
-  const [status, setStatus] = useState<TaskStatus>('pending');
+export default function TaskForm({ onSaved, task, open, onOpenChange, showTrigger = true }: TaskFormProps) {
+  const isEditing = Boolean(task);
+  const [internalOpen, setInternalOpen] = useState(false);
+  const [title, setTitle] = useState(task?.title ?? '');
+  const [description, setDescription] = useState(task?.description ?? '');
+  const [priority, setPriority] = useState<TaskPriority>(task?.priority ?? 'medium');
+  const [status, setStatus] = useState<TaskStatus>(task?.status ?? 'pending');
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
+  const isOpen = open ?? internalOpen;
+
+  useEffect(() => {
+    setTitle(task?.title ?? '');
+    setDescription(task?.description ?? '');
+    setPriority(task?.priority ?? 'medium');
+    setStatus(task?.status ?? 'pending');
+    setError('');
+  }, [task]);
+
+  function handleOpenChange(nextOpen: boolean) {
+    if (!nextOpen && saving) return;
+    onOpenChange?.(nextOpen);
+    if (open === undefined) setInternalOpen(nextOpen);
+  }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -37,30 +69,49 @@ export default function TaskForm({ onCreated }: TaskFormProps) {
     setError('');
     setSaving(true);
     try {
-      const task = await createTask({
-        title: cleanTitle,
-        description: cleanDescription,
-        priority,
-        status,
-      });
-      onCreated(task);
-      setTitle('');
-      setDescription('');
-      setPriority('medium');
-      setStatus('pending');
+      const savedTask = isEditing && task
+        ? await updateTask(task.id, {
+            title: cleanTitle,
+            description: cleanDescription,
+            priority,
+            status,
+          })
+        : await createTask({ title: cleanTitle, description: cleanDescription, priority, status });
+      onSaved(savedTask);
+      if (!isEditing) {
+        setTitle('');
+        setDescription('');
+        setPriority('medium');
+        setStatus('pending');
+      }
+      toast.success(isEditing ? 'Tarea actualizada correctamente.' : 'Tarea creada correctamente.');
+      handleOpenChange(false);
     } catch {
-      setError('No se pudo crear la tarea. Inténtalo de nuevo.');
+      const message = isEditing
+        ? 'No se pudo actualizar la tarea. Inténtalo de nuevo.'
+        : 'No se pudo crear la tarea. Inténtalo de nuevo.';
+      setError(message);
+      toast.error(message);
     } finally {
       setSaving(false);
     }
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Nueva tarea</CardTitle>
-      </CardHeader>
-      <CardContent>
+    <Dialog open={isOpen} onOpenChange={handleOpenChange}>
+      {!isEditing && showTrigger && (
+        <DialogTrigger render={<Button className="gap-2" />}>
+          <Plus />
+          Nueva tarea
+        </DialogTrigger>
+      )}
+      <DialogContent className="sm:max-w-lg">
+        <DialogHeader>
+          <DialogTitle>{isEditing ? 'Editar tarea' : 'Nueva tarea'}</DialogTitle>
+          <DialogDescription>
+            {isEditing ? 'Actualiza el estado o la prioridad de la tarea.' : 'Completa los datos para agregar una tarea.'}
+          </DialogDescription>
+        </DialogHeader>
         <form className="grid gap-4 md:grid-cols-2" onSubmit={handleSubmit}>
           <label className="grid gap-2 text-sm font-medium">
             Título
@@ -102,18 +153,15 @@ export default function TaskForm({ onCreated }: TaskFormProps) {
             </select>
           </label>
 
-          <div className="flex items-end justify-end gap-3 md:col-span-2">
+          <DialogFooter className="md:col-span-2">
             {error && <p className="mr-auto text-sm text-destructive">{error}</p>}
-            <button
-              className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
-              disabled={saving}
-              type="submit"
-            >
-              {saving ? 'Guardando...' : 'Agregar tarea'}
-            </button>
-          </div>
+            <Button disabled={saving} type="submit">
+              {saving && <Loader2 className="animate-spin" />}
+              {saving ? 'Guardando...' : isEditing ? 'Guardar cambios' : 'Agregar tarea'}
+            </Button>
+          </DialogFooter>
         </form>
-      </CardContent>
-    </Card>
+      </DialogContent>
+    </Dialog>
   );
 }
