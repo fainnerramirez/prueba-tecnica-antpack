@@ -1,13 +1,15 @@
 'use client';
 
-import TaskCard from "./components/TaskCard";
+import MetricsCards from './components/MetricsCards';
 
 export default function Home() {
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <TaskCard task={{ id: '1', title: 'Task 1', description: 'This is the first task', status: 'pending', priority: 'medium', createdAt: new Date().toISOString() }} onStatusChange={() => Promise.resolve()} />
-      </main>
-    </div>
+    <main className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-6 py-10">
+      <header>
+        <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
+        <p className="mt-1 text-muted-foreground">Revisa tus tareas y sus métricas</p>
+      </header>
+      <MetricsCards />
+    </main>
   );
 }
