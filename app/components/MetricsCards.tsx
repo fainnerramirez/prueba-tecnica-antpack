@@ -16,7 +16,11 @@ const INITIAL_METRICS: TaskMetrics = {
     completedPercentage: 0,
 };
 
-export default function MetricsCards() {
+interface MetricsCardsProps {
+    refreshKey?: number;
+}
+
+export default function MetricsCards({ refreshKey = 0 }: MetricsCardsProps) {
     const [metrics, setMetrics] = useState<TaskMetrics>(INITIAL_METRICS);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(false);
@@ -34,7 +38,7 @@ export default function MetricsCards() {
         }
 
         loadMetrics();
-    }, []);
+    }, [refreshKey]);
 
     const cards = [
         {
